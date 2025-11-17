@@ -72,7 +72,7 @@ GITHUB_TOKEN: <for testing CI/CD>
 - ✅ **Security policy** (SECURITY.md)
 - ✅ **Contributing guidelines** (CONTRIBUTING.md)
 - ✅ **License** (MIT)
-- ✅ **CI/CD pipeline** (.github/workflows/ci.yml)
+- ⚠️ **CI/CD pipeline** (DISABLED - workflow renamed to ci.yml.disabled)
 - ✅ **Issue templates** (bug reports, feature requests)
 
 ## 📋 Professional Open Source Checklist
@@ -82,7 +82,7 @@ GITHUB_TOKEN: <for testing CI/CD>
 - [x] Contributing guidelines for community engagement
 - [x] Security policy for responsible disclosure
 - [x] Issue templates for structured feedback
-- [x] CI/CD pipeline for automated testing
+- [x] ~~CI/CD pipeline for automated testing~~ (DISABLED)
 - [x] Changelog for version tracking
 - [x] Professional project structure
 - [x] Type hints and documentation throughout
