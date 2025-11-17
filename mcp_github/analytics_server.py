@@ -97,7 +97,7 @@ async def github_engineer_activity(
         
         # Analyze PR details for merge status and cycle times
         for pr in prs:
-            if pr.get("state") == "closed" and pr.get("pull_request"):
+            if pr.get("pull_request"):
                 # Get detailed PR info to check merge status
                 repo_url = pr["repository_url"]
                 repo_parts = repo_url.split("/")
