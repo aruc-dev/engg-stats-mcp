@@ -136,7 +136,10 @@ async def confluence_engineer_activity(
         start_date = datetime.fromisoformat(from_date)
         end_date = datetime.fromisoformat(to_date)
         days_period = (end_date - start_date).days
-        weeks_period = days_period / 7 if days_period > 0 else 1
+        
+        # Ensure weeks_period is always > 0 to prevent division by zero
+        # For same-day queries or very short periods, default to 1 week
+        weeks_period = max(days_period / 7, 1) if days_period >= 0 else 1
         
         # Build comprehensive metrics result
         result = {
