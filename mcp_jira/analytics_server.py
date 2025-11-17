@@ -107,7 +107,8 @@ async def jira_engineer_activity(
         issues_resolved = len(resolved_issues)
         
         # Count reopened issues from assigned issues
-        reopened_count = jira_client._count_reopened_issues(assigned_issues)
+        # Use the public method to preserve encapsulation (see JiraClient)
+        reopened_count = jira_client.count_reopened_issues(assigned_issues)
         
         # Calculate lead times for resolved issues
         lead_times = jira_client._calculate_lead_times(resolved_issues)
