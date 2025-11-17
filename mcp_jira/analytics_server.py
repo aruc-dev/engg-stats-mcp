@@ -111,7 +111,7 @@ async def jira_engineer_activity(
         reopened_count = jira_client.count_reopened_issues(assigned_issues)
         
         # Calculate lead times for resolved issues
-        lead_times = jira_client._calculate_lead_times(resolved_issues)
+        lead_times = jira_client.calculate_lead_times(resolved_issues)
         avg_lead_time_hours = None
         if lead_times:
             avg_lead_time_hours = sum(lead_times) / len(lead_times)
