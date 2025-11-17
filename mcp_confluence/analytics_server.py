@@ -15,7 +15,6 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
 from shared.confluence_client import ConfluenceClient, ConfluenceAPIError
-from shared.date_utils import parse_iso_date
 
 # Load environment variables
 load_dotenv()
