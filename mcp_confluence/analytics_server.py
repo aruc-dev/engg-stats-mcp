@@ -1,5 +1,4 @@
 """Confluence Engineering Analytics MCP Server - Focused on Metrics Only"""
-import json
 import logging
 import os
 import sys
