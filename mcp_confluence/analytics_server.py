@@ -83,7 +83,7 @@ async def confluence_engineer_activity(
     """
     try:
         # Validate inputs
-        input_data = ConfluenceEngineerActivityInput(
+        ConfluenceEngineerActivityInput(
             user_email_or_account_id=user_email_or_account_id,
             from_date=from_date,
             to_date=to_date,
