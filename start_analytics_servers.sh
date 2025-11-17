@@ -7,15 +7,15 @@ cd "$(dirname "$0")"
 
 # Start servers in background
 echo "Starting GitHub Engineering Analytics server..."
-./start_github_analytics.sh &
+bash ./start_github_analytics.sh &
 GITHUB_PID=$!
 
 echo "Starting Jira Engineering Analytics server..."  
-./start_jira_analytics.sh &
+bash ./start_jira_analytics.sh &
 JIRA_PID=$!
 
 echo "Starting Confluence Engineering Analytics server..."
-./start_confluence_analytics.sh &
+bash ./start_confluence_analytics.sh &
 CONFLUENCE_PID=$!
 
 echo ""
