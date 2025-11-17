@@ -7,7 +7,7 @@ echo "Stopping all Engineering Analytics MCP Servers..."
 ports=(4001 4002 4003)
 for port in "${ports[@]}"; do
     pid=$(lsof -ti:$port)
-    if [ ! -z "$pid" ]; then
+    if [ -n "$pid" ]; then
         echo "Stopping server on port $port (PID: $pid)"
         kill $pid
     else
