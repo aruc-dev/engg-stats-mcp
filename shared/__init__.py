@@ -1,0 +1,1 @@
+# Shared clients and utilities for MCP servers
