@@ -127,7 +127,7 @@ async def confluence_engineer_activity(
             if space_name not in spaces_activity:
                 spaces_activity[space_name] = {"created": 0, "updated": 0}
             
-            if page in created_pages:
+            if page.get("id") in created_page_ids:
                 spaces_activity[space_name]["created"] += 1
             else:
                 spaces_activity[space_name]["updated"] += 1
