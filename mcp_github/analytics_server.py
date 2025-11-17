@@ -77,7 +77,7 @@ async def github_engineer_activity(
     """
     try:
         # Validate inputs
-        input_data = GitHubEngineerActivityInput(
+        GitHubEngineerActivityInput(
             login=login,
             from_date=from_date,
             to_date=to_date,
