@@ -175,17 +175,34 @@ Add to your VS Code MCP configuration file:
 ### 5. Start Analytics Servers
 
 ```bash
-# Start all analytics servers
+# Start all main servers (ports 4001-4003)
+./start_all_servers.sh
+
+# Start all analytics servers (ports 4011-4013)
 ./start_analytics_servers.sh
 
 # Or start individual servers
-./start_github_analytics.sh
-./start_jira_analytics.sh  
-./start_confluence_analytics.sh
+./start_github_server.sh        # Port 4001
+./start_jira_server.sh          # Port 4002
+./start_confluence_server.sh    # Port 4003
+./start_github_analytics.sh     # Port 4011
+./start_jira_analytics.sh       # Port 4012
+./start_confluence_analytics.sh # Port 4013
 
-# Stop all analytics servers
-./stop_analytics_servers.sh
+# Stop servers
+./stop_all_servers.sh          # Stop main servers
+./stop_analytics_servers.sh    # Stop analytics servers
 ```
+
+**Server Ports:**
+| Server | Port | Type |
+|--------|------|------|
+| GitHub MCP | 4001 | Main |
+| Jira MCP | 4002 | Main |
+| Confluence MCP | 4003 | Main |
+| GitHub Analytics | 4011 | Analytics |
+| Jira Analytics | 4012 | Analytics |
+| Confluence Analytics | 4013 | Analytics |
 
 ### 6. Complete Setup
 
@@ -210,6 +227,31 @@ Add to your VS Code MCP configuration file:
 "Show confluence activity for bob in the TECH space, plus create a summary page of his contributions (using both servers)"
 ```
 
+## Technical Architecture
+
+### 🏗️ FastMCP Framework
+All custom analytics servers are built using the **FastMCP** framework:
+- **Consistent Implementation**: Standardized server pattern across all 6 MCP servers
+- **SSE Transport**: Server-Sent Events for real-time communication
+- **Tool Decorators**: Simple, declarative tool definitions
+- **Type Safety**: Pydantic models for input validation and serialization
+
+### 🛡️ Comprehensive Error Handling
+Robust error management system with specific exception types:
+- **Hierarchical Error System**: Base `MCPServerError` with platform-specific errors
+- **API Error Types**: `GitHubAPIError`, `JiraAPIError`, `ConfluenceAPIError`
+- **Validation Errors**: Input validation with detailed error messages
+- **Rate Limiting**: Automatic retry logic with exponential backoff
+- **Network Resilience**: Timeout handling and connection error management
+
+### 🔌 VS Code Integration
+Complete development environment configuration:
+- **MCP Server Configuration**: Pre-configured for all 6 servers
+- **Debug Support**: Full debugging with breakpoints for all servers
+- **Task Automation**: One-click server management via Command Palette
+- **Shell Scripts**: Alternative startup scripts with proper environment activation
+- **Troubleshooting**: Built-in connectivity tests and error diagnostics
+
 ## Architecture Benefits
 
 ### 🔧 Official Servers Provide:
@@ -232,19 +274,35 @@ Add to your VS Code MCP configuration file:
 
 ## Troubleshooting
 
+### VS Code MCP Connection Issues
+
+**"Error spawn python ENOENT"**: VS Code can't find the Python interpreter.
+- **Solution**: The `.vscode/mcp.json` uses full virtual environment paths
+- **Alternative**: Use shell-based configuration: `cp .vscode/mcp-shell.json .vscode/mcp.json`
+- **Test**: Run `python .vscode/test_mcp_connectivity.py` to validate setup
+- **Restart**: Restart VS Code after configuration changes
+
+**"Waiting for server to respond to initialize request"**: Server started but not responding.
+- **Check Ports**: Kill processes on ports 4001-4003, 4011-4013
+- **Kill Command**: `lsof -ti:4001,4002,4003,4011,4012,4013 | xargs kill -9`
+- **Verify Setup**: Run `./stop_all_servers.sh && ./stop_analytics_servers.sh` before starting
+- **Check Logs**: Look at VS Code Output panel → MCP server logs
+
 ### Official Servers
 - **GitHub**: Follow [official GitHub MCP setup guide](https://github.com/github/github-mcp-server)
 - **Atlassian**: Follow [official Atlassian MCP setup guide](https://github.com/atlassian/atlassian-mcp-server)
 
 ### Analytics Servers
 - **Rate Limits**: Official servers handle API rate limiting automatically
-- **Authentication**: Verify environment variables are set correctly
-- **Logs**: Check server logs for detailed error information
+- **Authentication**: Verify environment variables are set correctly in `.env`
+- **Logs**: Check server logs for detailed error information with error types
+- **Testing**: Use provided test scripts: `test_startup.py`, `test_comprehensive.py`
 
 ### Common Issues
-- **Port Conflicts**: Analytics servers use ports 4001-4003 by default
+- **Port Conflicts**: Main servers use 4001-4003, analytics use 4011-4013
 - **Environment Variables**: Ensure all required variables are set in `.env`
 - **Virtual Environment**: Always activate venv before running analytics servers
+- **Python Path**: VS Code MCP configuration uses `${workspaceFolder}/venv/bin/python`
 
 ## Migration Guide
 
@@ -254,6 +312,60 @@ If upgrading from the previous standalone implementation:
 2. **Update Configuration**: Use the new hybrid MCP configuration
 3. **Test Functionality**: Verify both official and analytics servers work together
 4. **Remove Old Scripts**: The old `start_all_servers.sh` is replaced by the new hybrid approach
+
+## Project Structure
+
+```
+engg-stats-mcp/
+├── .vscode/                    # VS Code workspace configuration
+│   ├── mcp.json               # MCP server configuration
+│   ├── mcp-shell.json         # Alternative shell-based config
+│   ├── tasks.json             # Task definitions for server management
+│   ├── launch.json            # Debug configurations
+│   ├── settings.json          # Python workspace settings
+│   ├── start_*_mcp.sh         # Individual server startup scripts
+│   └── test_mcp_connectivity.py # MCP setup validation
+├── mcp_github/                 # GitHub MCP servers
+│   ├── server.py              # Main GitHub MCP server (FastMCP)
+│   └── analytics_server.py    # GitHub analytics server (FastMCP)
+├── mcp_jira/                   # Jira MCP servers
+│   ├── server.py              # Main Jira MCP server (FastMCP)
+│   └── analytics_server.py    # Jira analytics server (FastMCP)
+├── mcp_confluence/             # Confluence MCP servers
+│   ├── server.py              # Main Confluence MCP server (FastMCP)
+│   └── analytics_server.py    # Confluence analytics server (FastMCP)
+├── shared/                     # Shared utilities
+│   ├── errors.py              # Comprehensive error handling
+│   ├── github_client.py       # GitHub API client with retry logic
+│   ├── jira_client.py         # Jira API client with error handling
+│   ├── confluence_client.py   # Confluence API client
+│   └── date_utils.py          # Date/time utilities
+├── test_startup.py             # Server startup validation
+├── test_comprehensive.py       # Full functionality tests
+├── test_vscode_config.py       # VS Code configuration tests
+├── start_*.sh                  # Server startup scripts
+├── stop_*.sh                   # Server shutdown scripts
+├── engineering-stats-mcp.code-workspace  # VS Code workspace file
+└── README.md                   # This file
+```
+
+## Testing
+
+Run the included test suites to validate your setup:
+
+```bash
+# Test server startup
+python test_startup.py
+
+# Test comprehensive functionality
+python test_comprehensive.py
+
+# Test VS Code configuration
+python test_vscode_config.py
+
+# Test MCP connectivity
+python .vscode/test_mcp_connectivity.py
+```
 
 ## Contributing
 
