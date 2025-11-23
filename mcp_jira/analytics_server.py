@@ -1,10 +1,8 @@
 """Jira Engineering Analytics MCP Server - Focused on Metrics Only"""
-import json
 import logging
 import os
 import sys
-from typing import Any, List, Optional, Dict
-import asyncio
+from typing import Any, Optional, Dict
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
@@ -93,7 +91,7 @@ async def jira_engineer_activity(
     """
     try:
         # Validate inputs
-        input_data = JiraEngineerActivityInput(
+        JiraEngineerActivityInput(
             user_email_or_account_id=user_email_or_account_id,
             from_date=from_date,
             to_date=to_date,
@@ -115,10 +113,11 @@ async def jira_engineer_activity(
         issues_resolved = len(resolved_issues)
         
         # Count reopened issues from assigned issues
-        reopened_count = jira_client._count_reopened_issues(assigned_issues)
+        # Use the public method to preserve encapsulation (see JiraClient)
+        reopened_count = jira_client.count_reopened_issues(assigned_issues)
         
         # Calculate lead times for resolved issues
-        lead_times = jira_client._calculate_lead_times(resolved_issues)
+        lead_times = jira_client.calculate_lead_times(resolved_issues)
         avg_lead_time_hours = None
         if lead_times:
             avg_lead_time_hours = sum(lead_times) / len(lead_times)

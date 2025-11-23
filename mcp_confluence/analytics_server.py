@@ -1,10 +1,8 @@
 """Confluence Engineering Analytics MCP Server - Focused on Metrics Only"""
-import json
 import logging
 import os
 import sys
 from typing import Any, List, Optional, Dict
-import asyncio
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
@@ -93,7 +91,7 @@ async def confluence_engineer_activity(
     """
     try:
         # Validate inputs
-        input_data = ConfluenceEngineerActivityInput(
+        ConfluenceEngineerActivityInput(
             user_email_or_account_id=user_email_or_account_id,
             from_date=from_date,
             to_date=to_date,
@@ -137,7 +135,7 @@ async def confluence_engineer_activity(
             if space_name not in spaces_activity:
                 spaces_activity[space_name] = {"created": 0, "updated": 0}
             
-            if page in created_pages:
+            if page.get("id") in created_page_ids:
                 spaces_activity[space_name]["created"] += 1
             else:
                 spaces_activity[space_name]["updated"] += 1
@@ -147,7 +145,10 @@ async def confluence_engineer_activity(
         start_date = datetime.fromisoformat(from_date)
         end_date = datetime.fromisoformat(to_date)
         days_period = (end_date - start_date).days
-        weeks_period = days_period / 7 if days_period > 0 else 1
+        
+        # Ensure weeks_period is always > 0 to prevent division by zero
+        # For same-day queries or very short periods, default to 1 week
+        weeks_period = max(days_period / 7, 1) if days_period >= 0 else 1
         
         # Build comprehensive metrics result
         result = {

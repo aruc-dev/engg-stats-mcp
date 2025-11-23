@@ -1,10 +1,8 @@
 """GitHub Engineering Analytics MCP Server - Focused on Metrics Only"""
-import json
 import logging
 import os
 import sys
 from typing import Any, List, Optional, Dict
-import asyncio
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
@@ -87,7 +85,7 @@ async def github_engineer_activity(
     """
     try:
         # Validate inputs
-        input_data = GitHubEngineerActivityInput(
+        GitHubEngineerActivityInput(
             login=login,
             from_date=from_date,
             to_date=to_date,
@@ -107,7 +105,7 @@ async def github_engineer_activity(
         
         # Analyze PR details for merge status and cycle times
         for pr in prs:
-            if pr.get("state") == "closed" and pr.get("pull_request"):
+            if pr.get("pull_request"):
                 # Get detailed PR info to check merge status
                 repo_url = pr["repository_url"]
                 repo_parts = repo_url.split("/")
