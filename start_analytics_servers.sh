@@ -20,13 +20,14 @@ CONFLUENCE_PID=$!
 
 echo ""
 echo "All Engineering Analytics servers started:"
-echo "  - GitHub Analytics (PID: $GITHUB_PID) on port ${GITHUB_MCP_PORT:-4001}"
-echo "  - Jira Analytics (PID: $JIRA_PID) on port ${JIRA_MCP_PORT:-4002}" 
-echo "  - Confluence Analytics (PID: $CONFLUENCE_PID) on port ${CONFLUENCE_MCP_PORT:-4003}"
+echo "  - GitHub Analytics (PID: $GITHUB_PID) on port ${GITHUB_ANALYTICS_PORT:-4011}"
+echo "  - Jira Analytics (PID: $JIRA_PID) on port ${JIRA_ANALYTICS_PORT:-4012}" 
+echo "  - Confluence Analytics (PID: $CONFLUENCE_PID) on port ${CONFLUENCE_ANALYTICS_PORT:-4013}"
 echo ""
 echo "Use these servers alongside the official GitHub and Atlassian MCP servers"
 echo "for comprehensive GitHub/Jira/Confluence functionality plus engineering analytics."
 echo ""
+echo "Main MCP servers run on ports 4001-4003, analytics servers on 4011-4013"
 echo "To stop all servers, run: ./stop_analytics_servers.sh"
 
 # Wait for all background processes

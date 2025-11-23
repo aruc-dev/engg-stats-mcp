@@ -1,0 +1,95 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug GitHub MCP Server",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "mcp_github.server",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MCP_PORT": "4001",
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Debug Jira MCP Server",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "mcp_jira.server",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MCP_PORT": "4002",
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Debug Confluence MCP Server",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "mcp_confluence.server",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MCP_PORT": "4003",
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Debug GitHub Analytics Server",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/mcp_github/analytics_server.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MCP_PORT": "4011",
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Debug Jira Analytics Server",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/mcp_jira/analytics_server.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MCP_PORT": "4012",
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Debug Confluence Analytics Server",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/mcp_confluence/analytics_server.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MCP_PORT": "4013",
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Run Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_startup.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

@@ -1,0 +1,85 @@
+{
+  "servers": {
+    "github-engineering": {
+      "command": "${workspaceFolder}/venv/bin/python",
+      "args": [
+        "-m",
+        "mcp_github.server"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_PORT": "4001",
+        "PYTHONPATH": "${workspaceFolder}",
+        "VIRTUAL_ENV": "${workspaceFolder}/venv",
+        "PATH": "${workspaceFolder}/venv/bin:${env:PATH}"
+      }
+    },
+    "jira-engineering": {
+      "command": "${workspaceFolder}/venv/bin/python",
+      "args": [
+        "-m",
+        "mcp_jira.server"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_PORT": "4002",
+        "PYTHONPATH": "${workspaceFolder}",
+        "VIRTUAL_ENV": "${workspaceFolder}/venv",
+        "PATH": "${workspaceFolder}/venv/bin:${env:PATH}"
+      }
+    },
+    "confluence-engineering": {
+      "command": "${workspaceFolder}/venv/bin/python",
+      "args": [
+        "-m",
+        "mcp_confluence.server"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_PORT": "4003",
+        "PYTHONPATH": "${workspaceFolder}",
+        "VIRTUAL_ENV": "${workspaceFolder}/venv",
+        "PATH": "${workspaceFolder}/venv/bin:${env:PATH}"
+      }
+    },
+    "github-analytics": {
+      "command": "${workspaceFolder}/venv/bin/python",
+      "args": [
+        "mcp_github/analytics_server.py"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_PORT": "4011",
+        "PYTHONPATH": "${workspaceFolder}",
+        "VIRTUAL_ENV": "${workspaceFolder}/venv",
+        "PATH": "${workspaceFolder}/venv/bin:${env:PATH}"
+      }
+    },
+    "jira-analytics": {
+      "command": "${workspaceFolder}/venv/bin/python",
+      "args": [
+        "mcp_jira/analytics_server.py"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_PORT": "4012",
+        "PYTHONPATH": "${workspaceFolder}",
+        "VIRTUAL_ENV": "${workspaceFolder}/venv",
+        "PATH": "${workspaceFolder}/venv/bin:${env:PATH}"
+      }
+    },
+    "confluence-analytics": {
+      "command": "${workspaceFolder}/venv/bin/python",
+      "args": [
+        "mcp_confluence/analytics_server.py"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_PORT": "4013",
+        "PYTHONPATH": "${workspaceFolder}",
+        "VIRTUAL_ENV": "${workspaceFolder}/venv",
+        "PATH": "${workspaceFolder}/venv/bin:${env:PATH}"
+      }
+    }
+  }
+}

@@ -10,11 +10,16 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
+# Load environment variables
+source .env
+
 # Activate virtual environment if it exists
-if [ -d "venv" ]; then
-    source venv/bin/activate
-elif [ -d ".venv" ]; then
+if [ -d ".venv" ]; then
     source .venv/bin/activate
+elif [ -d "venv" ]; then
+    source venv/bin/activate
+else
+    echo "WARNING: No virtual environment found. Please run install.sh first."
 fi
 
 # Start the Jira server

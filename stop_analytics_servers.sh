@@ -3,15 +3,15 @@
 # Stop all Engineering Analytics MCP Servers
 echo "Stopping all Engineering Analytics MCP Servers..."
 
-# Find and kill processes by port
-ports=(4001 4002 4003)
+# Find and kill processes by port (analytics servers use ports 4011-4013)
+ports=(4011 4012 4013)
 for port in "${ports[@]}"; do
     pid=$(lsof -ti:$port)
-    if [ -n "$pid" ]; then
-        echo "Stopping server on port $port (PID: $pid)"
+    if [ ! -z "$pid" ]; then
+        echo "Stopping analytics server on port $port (PID: $pid)"
         kill $pid
     else
-        echo "No server found on port $port"
+        echo "No analytics server found on port $port"
     fi
 done
 
