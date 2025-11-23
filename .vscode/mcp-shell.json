@@ -1,0 +1,46 @@
+{
+    "servers": {
+        "github-engineering": {
+            "command": "${workspaceFolder}/.vscode/start_github_mcp.sh",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MCP_PORT": "4001"
+            }
+        },
+        "jira-engineering": {
+            "command": "${workspaceFolder}/.vscode/start_jira_mcp.sh",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MCP_PORT": "4002"
+            }
+        },
+        "confluence-engineering": {
+            "command": "${workspaceFolder}/.vscode/start_confluence_mcp.sh",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MCP_PORT": "4003"
+            }
+        },
+        "github-analytics": {
+            "command": "${workspaceFolder}/.vscode/start_github_analytics_mcp.sh",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MCP_PORT": "4011"
+            }
+        },
+        "jira-analytics": {
+            "command": "${workspaceFolder}/.vscode/start_jira_analytics_mcp.sh",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MCP_PORT": "4012"
+            }
+        },
+        "confluence-analytics": {
+            "command": "${workspaceFolder}/.vscode/start_confluence_analytics_mcp.sh",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "MCP_PORT": "4013"
+            }
+        }
+    }
+}

@@ -118,6 +118,17 @@ All servers expose health check endpoints:
 
 ### Common Issues
 
+**"Error spawn python ENOENT" in VS Code MCP**
+This error means VS Code can't find the Python interpreter. Solutions:
+
+1. **Use the updated `mcp.json`** - The configuration now uses full Python paths
+2. **Alternative: Use shell scripts** - Copy `mcp-shell.json` to `mcp.json` for shell-based startup
+3. **Verify virtual environment**:
+   ```bash
+   ls -la venv/bin/python*
+   ./venv/bin/python --version
+   ```
+
 **Virtual Environment Not Found**
 ```bash
 # Run install script
