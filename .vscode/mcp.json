@@ -1,0 +1,67 @@
+{
+  "servers": {
+    "github-engineering": {
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_github.server"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_PORT": "4001"
+      }
+    },
+    "jira-engineering": {
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_jira.server"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_PORT": "4002"
+      }
+    },
+    "confluence-engineering": {
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_confluence.server"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_PORT": "4003"
+      }
+    },
+    "github-analytics": {
+      "command": "python",
+      "args": [
+        "mcp_github/analytics_server.py"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_PORT": "4011"
+      }
+    },
+    "jira-analytics": {
+      "command": "python",
+      "args": [
+        "mcp_jira/analytics_server.py"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_PORT": "4012"
+      }
+    },
+    "confluence-analytics": {
+      "command": "python",
+      "args": [
+        "mcp_confluence/analytics_server.py"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "MCP_PORT": "4013"
+      }
+    }
+  }
+}

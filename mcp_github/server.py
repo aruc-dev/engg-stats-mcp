@@ -1,4 +1,4 @@
-"""GitHub MCP Server for Engineering Activity Analytics - Using MCP SDK"""
+"""GitHub MCP Server for Engineering Activity Analytics - Using FastMCP"""
 import json
 import logging
 import os
@@ -15,8 +15,12 @@ from mcp.server import FastMCP
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from shared.github_client import GitHubClient, GitHubAPIError
+from shared.github_client import GitHubClient
 from shared.date_utils import parse_iso_date, calculate_hours_between
+from shared.errors import (
+    GitHubAPIError, ValidationError, ConfigurationError, 
+    handle_mcp_error, log_and_raise_error
+)
 
 # Load environment variables
 load_dotenv()
@@ -43,11 +47,15 @@ app = FastMCP("GitHub Engineering Activity Analytics")
 # Initialize GitHub client
 github_token = os.getenv("GITHUB_TOKEN")
 if not github_token:
-    logger.error("GITHUB_TOKEN environment variable is required")
-    sys.exit(1)
+    error_msg = "GITHUB_TOKEN environment variable is required"
+    logger.error(error_msg)
+    raise ConfigurationError(error_msg, missing_config="GITHUB_TOKEN")
 
-github_client = GitHubClient(github_token)
-logger.info("GitHub MCP Server initialized successfully")
+try:
+    github_client = GitHubClient(github_token)
+    logger.info("GitHub MCP Server initialized successfully")
+except Exception as e:
+    log_and_raise_error(ConfigurationError(f"Failed to initialize GitHub client: {str(e)}"), "GitHub Server Init")
 
 
 @app.tool("github_engineer_activity")
@@ -70,19 +78,25 @@ async def github_engineer_activity(
     """
     try:
         # Validate inputs
-        input_data = GitHubEngineerActivityInput(
-            login=login,
-            from_date=from_date,
-            to_date=to_date,
-            repos=repos
-        )
+        try:
+            input_data = GitHubEngineerActivityInput(
+                login=login,
+                from_date=from_date,
+                to_date=to_date,
+                repos=repos
+            )
+        except Exception as e:
+            raise ValidationError(f"Invalid input parameters: {str(e)}")
         
         logger.info(f"Fetching GitHub activity for {login} from {from_date} to {to_date}")
         
         # Fetch PRs authored by user
-        prs = await github_client.search_prs_by_author(
-            login, from_date, to_date, repos
-        )
+        try:
+            prs = await github_client.search_prs_by_author(
+                login, from_date, to_date, repos
+            )
+        except GitHubAPIError as e:
+            log_and_raise_error(e, f"Fetching PRs for {login}")
         
         prs_authored = len(prs)
         prs_merged = 0
@@ -113,6 +127,9 @@ async def github_engineer_activity(
                 except GitHubAPIError as e:
                     logger.warning(f"Failed to get PR details for {pr['number']}: {e}")
                     continue
+                except Exception as e:
+                    logger.warning(f"Unexpected error processing PR {pr['number']}: {e}")
+                    continue
         
         # Calculate average cycle time
         avg_pr_cycle_hours = None
@@ -120,15 +137,23 @@ async def github_engineer_activity(
             avg_pr_cycle_hours = sum(cycle_times) / len(cycle_times)
         
         # Fetch reviews given by user
-        reviews = await github_client.search_reviews_by_user(
-            login, from_date, to_date, repos
-        )
+        try:
+            reviews = await github_client.search_reviews_by_user(
+                login, from_date, to_date, repos
+            )
+        except GitHubAPIError as e:
+            log_and_raise_error(e, f"Fetching reviews for {login}")
+            
         reviews_given = len(reviews)
         
         # Fetch review comments written by user
-        comments = await github_client.get_review_comments_by_user(
-            login, from_date, to_date, repos
-        )
+        try:
+            comments = await github_client.get_review_comments_by_user(
+                login, from_date, to_date, repos
+            )
+        except GitHubAPIError as e:
+            log_and_raise_error(e, f"Fetching review comments for {login}")
+            
         comments_written = len(comments)
         
         # Build result
@@ -147,34 +172,41 @@ async def github_engineer_activity(
         
         return result
         
-    except GitHubAPIError as e:
-        error_msg = f"GitHub API error: {str(e)}"
-        logger.error(error_msg)
-        raise Exception(error_msg)
+    except (GitHubAPIError, ValidationError, ConfigurationError) as e:
+        # Re-raise known errors
+        raise e
     except Exception as e:
+        # Wrap unexpected errors
         error_msg = f"Failed to analyze GitHub activity: {str(e)}"
         logger.error(error_msg)
-        raise Exception(error_msg)
+        log_and_raise_error(GitHubAPIError(error_msg), "GitHub Activity Analysis")
 
 
 def main():
     """Main entry point"""
     # Validate environment variables
     if not os.getenv("GITHUB_TOKEN"):
-        print("ERROR: GITHUB_TOKEN environment variable is required")
-        sys.exit(1)
+        error_msg = "GITHUB_TOKEN environment variable is required"
+        print(f"ERROR: {error_msg}")
+        raise ConfigurationError(error_msg, missing_config="GITHUB_TOKEN")
     
     port = int(os.getenv("GITHUB_MCP_PORT", 4001))
     
     logger.info(f"Starting GitHub MCP server on port {port}")
     logger.info(f"Using MCP SDK with FastMCP server")
     
-    # FastMCP supports different transports. Let's try SSE (Server-Sent Events)
-    import uvicorn
-    
-    # Use the SSE app from FastMCP  
-    sse_app = app.sse_app
-    uvicorn.run(sse_app, host="0.0.0.0", port=port)
+    try:
+        # FastMCP supports different transports. Let's try SSE (Server-Sent Events)
+        import uvicorn
+        
+        # Use the SSE app from FastMCP  
+        sse_app = app.sse_app
+        uvicorn.run(sse_app, host="0.0.0.0", port=port)
+    except Exception as e:
+        log_and_raise_error(
+            ConfigurationError(f"Failed to start server: {str(e)}"),
+            "GitHub Server Startup"
+        )
 
 
 if __name__ == "__main__":

@@ -15,8 +15,12 @@ from mcp.server import FastMCP
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from shared.jira_client import JiraClient, JiraAPIError
+from shared.jira_client import JiraClient
 from shared.date_utils import parse_iso_date
+from shared.errors import (
+    JiraAPIError, ValidationError, ConfigurationError,
+    handle_mcp_error, log_and_raise_error
+)
 
 # Load environment variables
 load_dotenv()
@@ -49,11 +53,15 @@ jira_api_token = os.getenv("JIRA_API_TOKEN")
 required_vars = ["JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN"]
 missing_vars = [var for var in required_vars if not os.getenv(var)]
 if missing_vars:
-    logger.error(f"Missing required environment variables: {', '.join(missing_vars)}")
-    sys.exit(1)
+    error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
+    logger.error(error_msg)
+    raise ConfigurationError(error_msg, missing_config=missing_vars[0])
 
-jira_client = JiraClient(jira_base_url, jira_email, jira_api_token)
-logger.info("Jira Engineering Analytics MCP Server initialized")
+try:
+    jira_client = JiraClient(jira_base_url, jira_email, jira_api_token)
+    logger.info("Jira Engineering Analytics MCP Server initialized")
+except Exception as e:
+    log_and_raise_error(ConfigurationError(f"Failed to initialize Jira client: {str(e)}"), "Jira Analytics Server Init")
 
 
 @app.tool("jira_engineer_activity")

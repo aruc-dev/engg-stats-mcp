@@ -5,13 +5,9 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 import httpx
 from shared.date_utils import parse_iso_date
+from shared.errors import ConfluenceAPIError, RateLimitError, NetworkError, create_confluence_error
 
 logger = logging.getLogger(__name__)
-
-
-class ConfluenceAPIError(Exception):
-    """Confluence API specific error"""
-    pass
 
 
 class ConfluenceClient:
@@ -50,19 +46,25 @@ class ConfluenceClient:
                 )
                 
                 if response.status_code == 429:
-                    raise ConfluenceAPIError("Rate limit exceeded. Please wait before making more requests.")
+                    # Try to extract retry-after header
+                    retry_after = None
+                    if 'retry-after' in response.headers:
+                        try:
+                            retry_after = int(response.headers['retry-after'])
+                        except ValueError:
+                            pass
+                    raise RateLimitError("Confluence", retry_after)
                 
                 if not response.is_success:
-                    error_msg = f"Confluence API request failed: {response.status_code} - {response.text}"
-                    logger.error(error_msg)
-                    raise ConfluenceAPIError(error_msg)
+                    # Use the new error creation function
+                    raise create_confluence_error(response)
                 
                 return response.json()
                 
             except httpx.RequestError as e:
                 error_msg = f"Network error making request to Confluence API: {str(e)}"
                 logger.error(error_msg)
-                raise ConfluenceAPIError(error_msg) from e
+                raise NetworkError(error_msg, "Confluence") from e
     
     async def _paginate_content(self, endpoint: str, params: Dict[str, Any], max_items: int = 200) -> List[Dict[str, Any]]:
         """Paginate through content results"""

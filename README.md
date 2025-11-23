@@ -59,7 +59,32 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Configuration
+### 3. VS Code Workspace Setup (Recommended)
+
+This repository includes a complete VS Code workspace configuration for seamless development:
+
+```bash
+# Open the workspace in VS Code
+code engineering-stats-mcp.code-workspace
+
+# Or open the folder directly
+code .
+```
+
+The `.vscode/` folder contains:
+- **`mcp.json`**: All 6 MCP servers pre-configured
+- **`tasks.json`**: One-click server management via Command Palette
+- **`launch.json`**: Debug configurations for all servers
+- **`settings.json`**: Python development optimizations
+- **`extensions.json`**: Recommended extensions
+
+**Quick VS Code Setup:**
+1. Open workspace → Install recommended extensions when prompted
+2. Run task: `Ctrl+Shift+P` → "Tasks: Run Task" → "Install Dependencies"
+3. Run task: "Start All Main Servers" to launch GitHub/Jira/Confluence servers
+4. Run task: "Start Analytics Servers" for specialized metrics servers
+
+### 4. Manual Configuration
 
 ```bash
 # Copy environment template

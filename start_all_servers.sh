@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Start All MCP Servers
+# Start All Main MCP Servers
 echo "Starting all Engineering Productivity MCP servers..."
 cd "$(dirname "$0")"
 
@@ -9,6 +9,9 @@ if [ ! -f .env ]; then
     echo "ERROR: .env file not found. Please copy .env.example to .env and configure your API tokens."
     exit 1
 fi
+
+# Load environment variables
+source .env
 
 # Function to start a server in background
 start_server() {

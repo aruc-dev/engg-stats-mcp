@@ -4,13 +4,9 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 import httpx
 from shared.date_utils import parse_iso_date, calculate_hours_between, get_date_range_query_string
+from shared.errors import GitHubAPIError, RateLimitError, NetworkError, create_github_error
 
 logger = logging.getLogger(__name__)
-
-
-class GitHubAPIError(Exception):
-    """GitHub API specific error"""
-    pass
 
 
 class GitHubClient:
@@ -35,19 +31,25 @@ class GitHubClient:
                 response = await client.request(method, url, headers=self.headers, params=params)
                 
                 if response.status_code == 429:
-                    raise GitHubAPIError("Rate limit exceeded. Please wait before making more requests.")
+                    # Try to extract retry-after header
+                    retry_after = None
+                    if 'retry-after' in response.headers:
+                        try:
+                            retry_after = int(response.headers['retry-after'])
+                        except ValueError:
+                            pass
+                    raise RateLimitError("GitHub", retry_after)
                 
                 if not response.is_success:
-                    error_msg = f"GitHub API request failed: {response.status_code} - {response.text}"
-                    logger.error(error_msg)
-                    raise GitHubAPIError(error_msg)
+                    # Use the new error creation function
+                    raise create_github_error(response)
                 
                 return response.json()
                 
             except httpx.RequestError as e:
                 error_msg = f"Network error making request to GitHub API: {str(e)}"
                 logger.error(error_msg)
-                raise GitHubAPIError(error_msg) from e
+                raise NetworkError(error_msg, "GitHub") from e
     
     async def _paginate_search(self, endpoint: str, params: Dict[str, Any], max_items: int = 200) -> List[Dict[str, Any]]:
         """Paginate through search results"""

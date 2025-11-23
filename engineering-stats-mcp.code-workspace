@@ -1,0 +1,42 @@
+{
+    "folders": [
+        {
+            "name": "Engineering Stats MCP",
+            "path": "."
+        }
+    ],
+    "settings": {
+        "python.defaultInterpreterPath": "./venv/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "files.associations": {
+            "*.env": "properties",
+            "*.env.*": "properties"
+        }
+    },
+    "extensions": {
+        "recommendations": [
+            "ms-python.python",
+            "ms-python.debugpy",
+            "ms-python.black-formatter",
+            "GitHub.copilot",
+            "GitHub.copilot-chat"
+        ]
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "Quick Start All Servers",
+                "type": "shell",
+                "command": "./start_all_servers.sh && ./start_analytics_servers.sh",
+                "group": "build",
+                "presentation": {
+                    "echo": true,
+                    "reveal": "always",
+                    "focus": false,
+                    "panel": "new"
+                }
+            }
+        ]
+    }
+}

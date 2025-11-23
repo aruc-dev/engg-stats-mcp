@@ -15,8 +15,12 @@ from mcp.server import FastMCP
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from shared.github_client import GitHubClient, GitHubAPIError
+from shared.github_client import GitHubClient
 from shared.date_utils import parse_iso_date, calculate_hours_between
+from shared.errors import (
+    GitHubAPIError, ValidationError, ConfigurationError,
+    handle_mcp_error, log_and_raise_error
+)
 
 # Load environment variables
 load_dotenv()
@@ -43,11 +47,15 @@ app = FastMCP("GitHub Engineering Analytics")
 # Initialize GitHub client
 github_token = os.getenv("GITHUB_TOKEN")
 if not github_token:
-    logger.error("GITHUB_TOKEN environment variable is required")
-    sys.exit(1)
+    error_msg = "GITHUB_TOKEN environment variable is required"
+    logger.error(error_msg)
+    raise ConfigurationError(error_msg, missing_config="GITHUB_TOKEN")
 
-github_client = GitHubClient(github_token)
-logger.info("GitHub Engineering Analytics MCP Server initialized")
+try:
+    github_client = GitHubClient(github_token)
+    logger.info("GitHub Engineering Analytics MCP Server initialized")
+except Exception as e:
+    log_and_raise_error(ConfigurationError(f"Failed to initialize GitHub client: {str(e)}"), "GitHub Analytics Server Init")
 
 
 @app.tool("github_engineer_activity")
