@@ -44,24 +44,33 @@ class ConfluenceEngineerActivityInput(BaseModel):
 # Create FastMCP server
 app = FastMCP("Confluence Engineering Activity Analytics")
 
-# Initialize Confluence client
-confluence_base_url = os.getenv("CONFLUENCE_BASE_URL")
-confluence_email = os.getenv("CONFLUENCE_EMAIL")
-confluence_api_token = os.getenv("CONFLUENCE_API_TOKEN")
+# Global client variable
+_confluence_client: Optional[ConfluenceClient] = None
 
-# Validate required environment variables
-required_vars = ["CONFLUENCE_BASE_URL", "CONFLUENCE_EMAIL", "CONFLUENCE_API_TOKEN"]
-missing_vars = [var for var in required_vars if not os.getenv(var)]
-if missing_vars:
-    error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
-    logger.error(error_msg)
-    raise ConfigurationError(error_msg, missing_config=missing_vars[0])
+def get_confluence_client() -> ConfluenceClient:
+    """Lazy initialization of Confluence client"""
+    global _confluence_client
+    if _confluence_client is not None:
+        return _confluence_client
 
-try:
-    confluence_client = ConfluenceClient(confluence_base_url, confluence_email, confluence_api_token)
-    logger.info("Confluence MCP Server initialized successfully")
-except Exception as e:
-    log_and_raise_error(ConfigurationError(f"Failed to initialize Confluence client: {str(e)}"), "Confluence Server Init")
+    confluence_base_url = os.getenv("CONFLUENCE_BASE_URL")
+    confluence_email = os.getenv("CONFLUENCE_EMAIL")
+    confluence_api_token = os.getenv("CONFLUENCE_API_TOKEN")
+
+    # Validate required environment variables
+    required_vars = ["CONFLUENCE_BASE_URL", "CONFLUENCE_EMAIL", "CONFLUENCE_API_TOKEN"]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    if missing_vars:
+        error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
+        logger.error(error_msg)
+        raise ConfigurationError(error_msg, missing_config=missing_vars[0])
+
+    try:
+        _confluence_client = ConfluenceClient(confluence_base_url, confluence_email, confluence_api_token)
+        logger.info("Confluence MCP Server initialized successfully")
+        return _confluence_client
+    except Exception as e:
+        log_and_raise_error(ConfigurationError(f"Failed to initialize Confluence client: {str(e)}"), "Confluence Server Init")
 
 
 @app.tool("confluence_engineer_activity")
@@ -83,6 +92,9 @@ async def confluence_engineer_activity(
         Dictionary with Confluence activity metrics
     """
     try:
+        # Get client (lazy init)
+        client = get_confluence_client()
+
         # Validate inputs
         try:
             input_data = ConfluenceEngineerActivityInput(
@@ -98,7 +110,7 @@ async def confluence_engineer_activity(
         
         # Get pages created by user
         try:
-            created_pages = await confluence_client.search_content_by_creator(
+            created_pages = await client.search_content_by_creator(
                 user_email_or_account_id, from_date, to_date, space_key, "page"
             )
         except ConfluenceAPIError as e:
@@ -108,7 +120,7 @@ async def confluence_engineer_activity(
         
         # Get pages updated by user
         try:
-            updated_pages = await confluence_client.search_updated_content_by_user(
+            updated_pages = await client.search_updated_content_by_user(
                 user_email_or_account_id, from_date, to_date, space_key
             )
         except ConfluenceAPIError as e:
@@ -124,7 +136,7 @@ async def confluence_engineer_activity(
         
         # Get comments written by user
         try:
-            comments = await confluence_client.search_comments_by_user(
+            comments = await client.search_comments_by_user(
                 user_email_or_account_id, from_date, to_date, space_key
             )
         except ConfluenceAPIError as e:
@@ -158,14 +170,12 @@ async def confluence_engineer_activity(
 
 def main():
     """Main entry point"""
-    # Validate environment variables
+    # Validate environment variables (warn only)
     required_vars = ["CONFLUENCE_BASE_URL", "CONFLUENCE_EMAIL", "CONFLUENCE_API_TOKEN"]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     
     if missing_vars:
-        error_msg = f"The following environment variables are required: {', '.join(missing_vars)}"
-        print(f"ERROR: {error_msg}")
-        raise ConfigurationError(error_msg, missing_config=missing_vars[0])
+        logger.warning(f"The following environment variables are required: {', '.join(missing_vars)}. Tools may fail.")
     
     port = int(os.getenv("CONFLUENCE_MCP_PORT", 4003))
     
