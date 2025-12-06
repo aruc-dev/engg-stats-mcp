@@ -42,24 +42,33 @@ class JiraEngineerActivityInput(BaseModel):
 # Create FastMCP server focused on engineering analytics
 app = FastMCP("Jira Engineering Analytics")
 
-# Initialize Jira client
-jira_base_url = os.getenv("JIRA_BASE_URL")
-jira_email = os.getenv("JIRA_EMAIL")
-jira_api_token = os.getenv("JIRA_API_TOKEN")
+# Global client variable
+_jira_client: Optional[JiraClient] = None
 
-# Validate required environment variables
-required_vars = ["JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN"]
-missing_vars = [var for var in required_vars if not os.getenv(var)]
-if missing_vars:
-    error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
-    logger.error(error_msg)
-    raise ConfigurationError(error_msg, missing_config=missing_vars[0])
+def get_jira_client() -> JiraClient:
+    """Lazy initialization of Jira client"""
+    global _jira_client
+    if _jira_client is not None:
+        return _jira_client
 
-try:
-    jira_client = JiraClient(jira_base_url, jira_email, jira_api_token)
-    logger.info("Jira Engineering Analytics MCP Server initialized")
-except Exception as e:
-    log_and_raise_error(ConfigurationError(f"Failed to initialize Jira client: {str(e)}"), "Jira Analytics Server Init")
+    jira_base_url = os.getenv("JIRA_BASE_URL")
+    jira_email = os.getenv("JIRA_EMAIL")
+    jira_api_token = os.getenv("JIRA_API_TOKEN")
+
+    # Validate required environment variables
+    required_vars = ["JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN"]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    if missing_vars:
+        error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
+        logger.error(error_msg)
+        raise ConfigurationError(error_msg, missing_config=missing_vars[0])
+
+    try:
+        _jira_client = JiraClient(jira_base_url, jira_email, jira_api_token)
+        logger.info("Jira Engineering Analytics MCP Server initialized")
+        return _jira_client
+    except Exception as e:
+        log_and_raise_error(ConfigurationError(f"Failed to initialize Jira client: {str(e)}"), "Jira Analytics Server Init")
 
 
 @app.tool("jira_engineer_activity")
@@ -90,6 +99,9 @@ async def jira_engineer_activity(
         Dictionary with comprehensive Jira activity metrics
     """
     try:
+        # Get client (lazy init)
+        client = get_jira_client()
+
         # Validate inputs
         JiraEngineerActivityInput(
             user_email_or_account_id=user_email_or_account_id,
@@ -101,23 +113,23 @@ async def jira_engineer_activity(
         logger.info(f"Calculating Jira engineering metrics for {user_email_or_account_id} from {from_date} to {to_date}")
         
         # Get issues assigned to user in date range
-        assigned_issues = await jira_client.search_issues_assigned_to_user(
+        assigned_issues = await client.search_issues_assigned_to_user(
             user_email_or_account_id, from_date, to_date, jql_extra
         )
         issues_assigned = len(assigned_issues)
         
         # Get issues resolved by user in date range
-        resolved_issues = await jira_client.search_issues_resolved_by_user(
+        resolved_issues = await client.search_issues_resolved_by_user(
             user_email_or_account_id, from_date, to_date, jql_extra
         )
         issues_resolved = len(resolved_issues)
         
         # Count reopened issues from assigned issues
         # Use the public method to preserve encapsulation (see JiraClient)
-        reopened_count = jira_client.count_reopened_issues(assigned_issues)
+        reopened_count = client.count_reopened_issues(assigned_issues)
         
         # Calculate lead times for resolved issues
-        lead_times = jira_client.calculate_lead_times(resolved_issues)
+        lead_times = client.calculate_lead_times(resolved_issues)
         avg_lead_time_hours = None
         if lead_times:
             avg_lead_time_hours = sum(lead_times) / len(lead_times)
@@ -182,8 +194,7 @@ def main():
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     
     if missing_vars:
-        print(f"ERROR: The following environment variables are required: {', '.join(missing_vars)}")
-        sys.exit(1)
+        logger.warning(f"The following environment variables are required: {', '.join(missing_vars)}. Tools may fail.")
     
     port = int(os.getenv("JIRA_MCP_PORT", 4002))
     

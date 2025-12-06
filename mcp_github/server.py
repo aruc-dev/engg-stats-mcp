@@ -44,18 +44,27 @@ class GitHubEngineerActivityInput(BaseModel):
 # Create FastMCP server
 app = FastMCP("GitHub Engineering Activity Analytics")
 
-# Initialize GitHub client
-github_token = os.getenv("GITHUB_TOKEN")
-if not github_token:
-    error_msg = "GITHUB_TOKEN environment variable is required"
-    logger.error(error_msg)
-    raise ConfigurationError(error_msg, missing_config="GITHUB_TOKEN")
+# Global client variable
+_github_client: Optional[GitHubClient] = None
 
-try:
-    github_client = GitHubClient(github_token)
-    logger.info("GitHub MCP Server initialized successfully")
-except Exception as e:
-    log_and_raise_error(ConfigurationError(f"Failed to initialize GitHub client: {str(e)}"), "GitHub Server Init")
+def get_github_client() -> GitHubClient:
+    """Lazy initialization of GitHub client"""
+    global _github_client
+    if _github_client is not None:
+        return _github_client
+
+    github_token = os.getenv("GITHUB_TOKEN")
+    if not github_token:
+        error_msg = "GITHUB_TOKEN environment variable is required"
+        logger.error(error_msg)
+        raise ConfigurationError(error_msg, missing_config="GITHUB_TOKEN")
+
+    try:
+        _github_client = GitHubClient(github_token)
+        logger.info("GitHub MCP Server initialized successfully")
+        return _github_client
+    except Exception as e:
+        log_and_raise_error(ConfigurationError(f"Failed to initialize GitHub client: {str(e)}"), "GitHub Server Init")
 
 
 @app.tool("github_engineer_activity")
@@ -77,6 +86,9 @@ async def github_engineer_activity(
         Dictionary with PR and review activity metrics
     """
     try:
+        # Get client (lazy init)
+        client = get_github_client()
+
         # Validate inputs
         try:
             input_data = GitHubEngineerActivityInput(
@@ -92,7 +104,7 @@ async def github_engineer_activity(
         
         # Fetch PRs authored by user
         try:
-            prs = await github_client.search_prs_by_author(
+            prs = await client.search_prs_by_author(
                 login, from_date, to_date, repos
             )
         except GitHubAPIError as e:
@@ -111,7 +123,7 @@ async def github_engineer_activity(
                 repo_owner, repo_name = repo_parts[-2], repo_parts[-1]
                 
                 try:
-                    pr_details = await github_client.get_pr_details(
+                    pr_details = await client.get_pr_details(
                         repo_owner, repo_name, pr["number"]
                     )
                     
@@ -138,7 +150,7 @@ async def github_engineer_activity(
         
         # Fetch reviews given by user
         try:
-            reviews = await github_client.search_reviews_by_user(
+            reviews = await client.search_reviews_by_user(
                 login, from_date, to_date, repos
             )
         except GitHubAPIError as e:
@@ -148,7 +160,7 @@ async def github_engineer_activity(
         
         # Fetch review comments written by user
         try:
-            comments = await github_client.get_review_comments_by_user(
+            comments = await client.get_review_comments_by_user(
                 login, from_date, to_date, repos
             )
         except GitHubAPIError as e:
@@ -184,11 +196,9 @@ async def github_engineer_activity(
 
 def main():
     """Main entry point"""
-    # Validate environment variables
+    # Check config but don't crash immediately to allow partial functionality or help
     if not os.getenv("GITHUB_TOKEN"):
-        error_msg = "GITHUB_TOKEN environment variable is required"
-        print(f"ERROR: {error_msg}")
-        raise ConfigurationError(error_msg, missing_config="GITHUB_TOKEN")
+        logger.warning("GITHUB_TOKEN environment variable is not set. Tools may fail.")
     
     port = int(os.getenv("GITHUB_MCP_PORT", 4001))
     

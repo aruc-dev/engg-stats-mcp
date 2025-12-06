@@ -44,24 +44,35 @@ class JiraEngineerActivityInput(BaseModel):
 # Create FastMCP server
 app = FastMCP("Jira Engineering Activity Analytics")
 
-# Initialize Jira client
-jira_base_url = os.getenv("JIRA_BASE_URL")
-jira_email = os.getenv("JIRA_EMAIL")
-jira_api_token = os.getenv("JIRA_API_TOKEN")
+# Global client variable
+_jira_client: Optional[JiraClient] = None
 
-# Validate required environment variables
-required_vars = ["JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN"]
-missing_vars = [var for var in required_vars if not os.getenv(var)]
-if missing_vars:
-    error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
-    logger.error(error_msg)
-    raise ConfigurationError(error_msg, missing_config=missing_vars[0])
+def get_jira_client() -> JiraClient:
+    """Lazy initialization of Jira client"""
+    global _jira_client
+    if _jira_client is not None:
+        return _jira_client
 
-try:
-    jira_client = JiraClient(jira_base_url, jira_email, jira_api_token)
-    logger.info("Jira MCP Server initialized successfully")
-except Exception as e:
-    log_and_raise_error(ConfigurationError(f"Failed to initialize Jira client: {str(e)}"), "Jira Server Init")
+    jira_base_url = os.getenv("JIRA_BASE_URL")
+    jira_email = os.getenv("JIRA_EMAIL")
+    jira_api_token = os.getenv("JIRA_API_TOKEN")
+
+    # Validate required environment variables
+    required_vars = ["JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN"]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    if missing_vars:
+        error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
+        logger.error(error_msg)
+        raise ConfigurationError(error_msg, missing_config=missing_vars[0])
+
+    try:
+        _jira_client = JiraClient(jira_base_url, jira_email, jira_api_token)
+        logger.info("Jira MCP Server initialized successfully")
+        return _jira_client
+    except Exception as e:
+        log_and_raise_error(ConfigurationError(f"Failed to initialize Jira client: {str(e)}"), "Jira Server Init")
+
+
 @app.tool("jira_engineer_activity")
 async def jira_engineer_activity(
     user_email_or_account_id: str, 
@@ -81,6 +92,9 @@ async def jira_engineer_activity(
         Dictionary with issue tracking and resolution metrics
     """
     try:
+        # Get client (lazy init)
+        client = get_jira_client()
+
         # Validate inputs
         try:
             input_data = JiraEngineerActivityInput(
@@ -96,7 +110,7 @@ async def jira_engineer_activity(
         
         # Get issues assigned to user in date range
         try:
-            assigned_issues = await jira_client.search_issues_assigned_to_user(
+            assigned_issues = await client.search_issues_assigned_to_user(
                 user_email_or_account_id, from_date, to_date, jql_extra
             )
         except JiraAPIError as e:
@@ -106,7 +120,7 @@ async def jira_engineer_activity(
         
         # Get issues resolved by user in date range
         try:
-            resolved_issues = await jira_client.search_issues_resolved_by_user(
+            resolved_issues = await client.search_issues_resolved_by_user(
                 user_email_or_account_id, from_date, to_date, jql_extra
             )
         except JiraAPIError as e:
@@ -116,14 +130,14 @@ async def jira_engineer_activity(
         
         # Count reopened issues from assigned issues
         try:
-            reopened_count = jira_client._count_reopened_issues(assigned_issues)
+            reopened_count = client._count_reopened_issues(assigned_issues)
         except Exception as e:
             logger.warning(f"Failed to count reopened issues: {e}")
             reopened_count = 0
         
         # Calculate average lead time for resolved issues
         try:
-            lead_times = jira_client._calculate_lead_times(resolved_issues)
+            lead_times = client._calculate_lead_times(resolved_issues)
             avg_lead_time_hours = None
             if lead_times:
                 avg_lead_time_hours = sum(lead_times) / len(lead_times)
@@ -158,14 +172,12 @@ async def jira_engineer_activity(
 
 def main():
     """Main entry point"""
-    # Validate environment variables
+    # Validate environment variables (warn only)
     required_vars = ["JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN"]
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     
     if missing_vars:
-        error_msg = f"The following environment variables are required: {', '.join(missing_vars)}"
-        print(f"ERROR: {error_msg}")
-        raise ConfigurationError(error_msg, missing_config=missing_vars[0])
+        logger.warning(f"The following environment variables are required: {', '.join(missing_vars)}. Tools may fail.")
     
     port = int(os.getenv("JIRA_MCP_PORT", 4002))
     
